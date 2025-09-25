@@ -42,7 +42,7 @@ edition = "2024"
 # Metadata
 authors = ["Jonathan Dahan"]
 description = "A streaming transaction ledger with ordered routing by client id."
-license = "MIT OR Apache-2.0"
+license = "MIT"
 repository = "https://github.com/cosmicmind/rust-tx-ledger"
 homepage = "https://github.com/cosmicmind/rust-tx-ledger"
 documentation = "https://github.com/cosmicmind/rust-tx-ledger"
