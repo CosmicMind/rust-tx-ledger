@@ -1,0 +1,88 @@
+# rust-tx-ledger
+# 
+# A streaming transaction ledger with ordered routing by client id.
+#
+# ## Pipeline
+# Provider (CSV) → Broker (fan-out) → Partitions (per-client state) →
+# PartitionWriter (accounts.csv, stdout)
+# └──────────────→ DlqWriter (dlq.csv)
+#
+# ## Design
+# - Tokio runtime with bounded mpsc channels for backpressure.
+# - Provider validates input, malformed rows → dlq.csv.
+# - Broker routes each client id to exactly one partition (FIFO preserved).
+# - Partitions maintain client account state and exit with a snapshot (HashMap).
+# - Writer(s) consolidate outputs into CSV files.
+#
+# ## Build profiles
+# - **release**: optimized, LTO, panic abort (for production runs).
+# - **dev**: debug, overflow checks, incremental builds (for development).
+#
+# ## Dependencies
+# - clap: command-line interface.
+# - csv: CSV parsing/writing.
+# - futures: async utilities (join_all).
+# - num_cpus: determine default partition count.
+# - rust_decimal: fixed-point decimal (money-safe).
+# - serde: deserialization of CSV entries.
+# - thiserror: ergonomic error enums.
+# - tokio: async runtime, channels, task spawning.
+#
+# Example:
+# ```bash
+# cargo run -- transactions.csv > accounts.csv
+# # emits dlq.csv alongside with bad rows.
+# ```
+
+[package]
+name = "rust-tx-ledger"
+version = "0.1.0"
+edition = "2024"
+
+# Metadata
+authors = ["Jonathan Dahan"]
+description = "A streaming transaction ledger with ordered routing by client id."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cosmicmind/rust-tx-ledger"
+homepage = "https://github.com/cosmicmind/rust-tx-ledger"
+documentation = "https://github.com/cosmicmind/rust-tx-ledger"
+readme = "README.md"
+keywords = ["ledger", "transactions", "csv", "tokio", "async"]
+categories = ["finance", "asynchronous", "command-line-utilities"]
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+panic = "abort"
+
+[profile.dev]
+opt-level = 1
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+codegen-units = 256
+panic = 'unwind'
+incremental = true
+
+
+[dependencies]
+clap = { version = "4.5.48", features = ["derive"] }
+csv = "1.3.1"
+futures = "0.3.31"
+num_cpus = "1.17.0"
+rust_decimal = { version = "1.38.0", features = ["serde"] }
+serde = { version = "1.0.226", features = ["derive"] }
+thiserror = "2.0.16"
+tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros", "sync"] }
+
+[dev-dependencies]
+tokio = { version = "1.47.1", features = [
+    "rt-multi-thread",
+    "macros",
+    "time",
+    "sync",
+] }
+tempfile = "3.13"
+futures = "0.3.31"
